@@ -53,22 +53,35 @@ try {
 // All design routes require auth
 router.use(protect);
 
-// POST /api/v1/designs                         → Upload + create design
+// POST /api/v1/designs                              → Upload + create design
 router.post('/', upload.single('file'), ctrl.createDesign);
 
-// GET  /api/v1/designs                         → List my designs
+// GET  /api/v1/designs                              → List my designs
 router.get('/', ctrl.getMyDesigns);
 
-// GET  /api/v1/designs/:id                     → Get single design
+// GET  /api/v1/designs/stats                        → Get design statistics
+router.get('/stats', ctrl.getDesignStats);
+
+// GET  /api/v1/designs/product/:productId/config   → Get product config (colors, sizes, areas)
+router.get('/product/:productId/config', ctrl.getProductConfig);
+
+// GET  /api/v1/designs/:id                          → Get single design
 router.get('/:id', ctrl.getDesign);
 
-// PATCH /api/v1/designs/:id                    → Update design metadata
+// PATCH /api/v1/designs/:id                         → Update design metadata
 router.patch('/:id', ctrl.updateDesign);
 
-// DELETE /api/v1/designs/:id                   → Delete design
+// DELETE /api/v1/designs/:id                        → Delete design
 router.delete('/:id', ctrl.deleteDesign);
 
-// POST /api/v1/designs/:id/upload-to-qikink   → Push design to Qikink
+// POST /api/v1/designs/:id/upload-to-qikink        → Push design to Qikink
 router.post('/:id/upload-to-qikink', ctrl.uploadDesignToQikink);
 
+// POST /api/v1/designs/:id/link-to-order           → Link design to order
+router.post('/:id/link-to-order', ctrl.linkDesignToOrder);
+
+// POST /api/v1/designs/:id/preview                 → Generate design preview
+router.post('/:id/preview', ctrl.generatePreview);
+
 module.exports = router;
+

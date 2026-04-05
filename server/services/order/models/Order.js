@@ -137,6 +137,17 @@ const orderSchema = new mongoose.Schema({
   refundAmount: { type: Number, default: 0 },
   refundedAt: { type: Date },
 
+  // ── Custom Design (if applicable) ─────────────────────
+  customDesign: {
+    designId: { type: mongoose.Schema.Types.ObjectId, ref: 'Design' },
+    qikinkDesignId: { type: String },
+    imageUrl: { type: String },
+    printArea: { type: String, enum: ['front', 'back', 'left-sleeve', 'right-sleeve', 'front-back'] },
+    selectedColor: { name: String, hexCode: String },
+    selectedSize: { type: String },
+    textLayers: { type: mongoose.Schema.Types.Mixed },
+  },
+
   // ── Notes ─────────────────────────────────────────────
   userNote: { type: String, maxlength: 500 },
   adminNote: { type: String },
