@@ -14,10 +14,10 @@
 
 const cloudinary = require('cloudinary').v2;
 const axios = require('axios');
-const Design = require('../models/Design');
-const Product = require('../../product/models/Product');
-const Order = require('../../order/models/Order');
-const { logger } = require('../../auth/utils/logger');
+const Design = require('./models/Design');
+const Product = require('../product/models/Product');
+const Order = require('../order/models/Order');
+const { logger } = require('../auth/utils/logger');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
