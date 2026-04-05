@@ -131,11 +131,48 @@ const orderSchema = new mongoose.Schema({
   cancelledAt: { type: Date },
   cancellationReason: { type: String },
   cancelledBy: { type: String, enum: ['user', 'seller', 'admin', 'system'] },
-  returnRequestedAt: { type: Date },
-  returnReason: { type: String },
-  returnedAt: { type: Date },
-  refundAmount: { type: Number, default: 0 },
-  refundedAt: { type: Date },
+  
+  // ── Return Management ──────────────────────────────────
+  returnStatus: { 
+    type: String, 
+    enum: ['pending', 'approved', 'rejected', 'shipped', 'received', 'refunded'],
+    sparse: true 
+  },
+  returnRequest: {
+    orderId: mongoose.Schema.Types.ObjectId,
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    items: [{
+      itemId: mongoose.Schema.Types.ObjectId,
+      reason: String,
+      quantity: Number,
+      refundAmount: Number,
+    }],
+    reason: String,
+    comments: String,
+    totalRefundAmount: Number,
+    status: String,
+    approvedAt: Date,
+    approvedBy: String,
+    rejectionReason: String,
+    rejectedAt: Date,
+    shippingLabel: String,
+    returnTrackingNumber: String,
+    shippedAt: Date,
+    receivedAt: Date,
+    refundId: String,
+    refundProcessedAt: Date,
+    createdAt: { type: Date, default: Date.now },
+  },
+
+  // ── Refunds Management ─────────────────────────────────
+  refunds: [{
+    refundId: String,
+    amount: Number,
+    reason: String,
+    status: String,
+    processedAt: Date,
+    cancelledAt: Date,
+  }],
 
   // ── Custom Design (if applicable) ─────────────────────
   customDesign: {

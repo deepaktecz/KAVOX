@@ -66,7 +66,7 @@ function FooterContent() {
   const cols = [
     { title: 'Shop', links: [['T-Shirts', '/shop?category=T-Shirts'], ['Hoodies', '/shop?category=Hoodies'], ['Custom Design', '/design-studio'], ['New Arrivals', '/shop?sort=-createdAt'], ['Sale', '/shop?sort=-discountPercent']] },
     { title: 'Help', links: [['Size Guide', '/size-guide'], ['Shipping Info', '/shipping'], ['Returns', '/returns'], ['Track Order', '/track'], ['FAQ', '/faq']] },
-    { title: 'Company', links: [['About Us', '/about'], ['Sustainability', '/sustainability'], ['Sell on KAVOX', '/auth/register?role=seller'], ['Careers', '/careers'], ['Contact', '/contact']] },
+    { title: 'Company', links: [['About Us', '/about'], ['Sustainability', '/sustainability'], ['Careers', '/careers'], ['Contact', '/contact']] },
   ];
 
   return (

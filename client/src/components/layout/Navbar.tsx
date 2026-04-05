@@ -250,11 +250,6 @@ export function Navbar() {
                         <Link href="/orders" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-kavox-gray hover:text-kavox-black hover:bg-kavox-cream" onClick={() => setUserMenuOpen(false)}>
                           <Package className="w-4 h-4" /> My Orders
                         </Link>
-                        {user?.role === 'seller' && (
-                          <Link href="/seller/dashboard" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-kavox-gray hover:text-kavox-black hover:bg-kavox-cream" onClick={() => setUserMenuOpen(false)}>
-                            <Settings className="w-4 h-4" /> Seller Dashboard
-                          </Link>
-                        )}
                         {(user?.role === 'admin' || user?.role === 'super_admin') && (
                           <Link href="/admin/dashboard" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-kavox-gray hover:text-kavox-black hover:bg-kavox-cream" onClick={() => setUserMenuOpen(false)}>
                             <Settings className="w-4 h-4" /> Admin Panel
@@ -273,9 +268,7 @@ export function Navbar() {
                       <>
                         <Link href="/auth/login" className="block px-4 py-2.5 text-sm text-kavox-charcoal hover:bg-kavox-cream font-medium" onClick={() => setUserMenuOpen(false)}>Sign In</Link>
                         <Link href="/auth/register" className="block px-4 py-2.5 text-sm text-kavox-gray hover:bg-kavox-cream" onClick={() => setUserMenuOpen(false)}>Create Account</Link>
-                        <div className="border-t border-kavox-border mt-1 px-4 py-2.5">
-                          <Link href="/auth/register?role=seller" className="text-xs text-kavox-accent font-semibold hover:underline" onClick={() => setUserMenuOpen(false)}>Sell on KAVOX →</Link>
-                        </div>
+
                       </>
                     )}
                   </div>

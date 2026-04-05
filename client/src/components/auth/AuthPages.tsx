@@ -205,18 +205,9 @@ export function RegisterPage() {
           <p className="text-kavox-gray text-sm font-light">Join KAVOX and wear your story</p>
         </div>
 
-        {/* Role toggle */}
-        <div className="flex gap-2 p-1 bg-kavox-sand rounded-sm mb-6 border border-kavox-border">
-          {['user', 'seller'].map(role => (
-            <button
-              key={role}
-              type="button"
-              onClick={() => setForm(p => ({ ...p, role }))}
-              className={`flex-1 py-2.5 text-sm font-semibold rounded-sm transition-all capitalize ${form.role === role ? 'bg-white text-kavox-black shadow-kavox-sm' : 'text-kavox-gray hover:text-kavox-black'}`}
-            >
-              {role === 'seller' ? '🏪 Seller Account' : '👤 Customer Account'}
-            </button>
-          ))}
+        {/* Note: Only customer registration - Admin manages seller data */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+          📝 Customer Registration Only. Admin panel manages sellers and products.
         </div>
 
         <form onSubmit={handleRegister} className="space-y-4">

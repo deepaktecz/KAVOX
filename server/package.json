@@ -5,9 +5,22 @@
   "main": "gateway/index.js",
   "scripts": {
     "start": "node gateway/index.js",
-    "dev": "nodemon gateway/index.js",
-    "dev:auth": "node services/auth/server.js",
-    "install:all": "npm install && cd services/auth && npm install"
+    "start:gateway": "node gateway/index.js",
+    "start:auth": "node microservices/auth/auth.service.js",
+    "start:product": "node microservices/product/product.service.js",
+    "start:order": "node microservices/order/order.service.js",
+    "start:payment": "node microservices/payment/payment.service.js",
+    "start:qikink": "node microservices/qikink/qikink.service.js",
+    "start:search": "node microservices/search/search.service.js",
+    "start:recommendation": "node microservices/recommendation/recommendation.service.js",
+    "start:seller": "node microservices/seller/seller.service.js",
+    "start:admin": "node microservices/admin/admin.service.js",
+    "start:all": "concurrently \"npm run start:gateway\" \"npm run start:auth\" \"npm run start:product\" \"npm run start:order\" \"npm run start:payment\" \"npm run start:qikink\" \"npm run start:search\" \"npm run start:recommendation\" \"npm run start:seller\" \"npm run start:admin\"",
+    "dev": "nodemon --watch microservices --watch gateway gateway/index.js",
+    "dev:all": "concurrently \"nodemon gateway/index.js\" \"nodemon microservices/auth/auth.service.js\" \"nodemon microservices/product/product.service.js\" \"nodemon microservices/order/order.service.js\" \"nodemon microservices/payment/payment.service.js\" \"nodemon microservices/qikink/qikink.service.js\" \"nodemon microservices/search/search.service.js\" \"nodemon microservices/recommendation/recommendation.service.js\" \"nodemon microservices/seller/seller.service.js\" \"nodemon microservices/admin/admin.service.js\"",
+    "test": "jest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "axios": "^1.6.2",

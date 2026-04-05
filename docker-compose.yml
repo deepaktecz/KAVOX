@@ -1,0 +1,317 @@
+version: '3.8'
+
+services:
+  # ─── DATABASES ───────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: kavox-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: kavox
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - kavox-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── REDIS (Caching) ──────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: kavox-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kavox-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ─── ELASTICSEARCH (Search) ───────────────────────────────────────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: kavox-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - kavox-network
+    healthcheck:
+      test: curl -s http://localhost:9200 >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── KIBANA (Elasticsearch Visualization) ─────────────────────────────────
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: kavox-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - kavox-network
+
+  # ─── MICROSERVICES ───────────────────────────────────────────────────────
+
+  # API Gateway
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-gateway
+    environment:
+      NODE_ENV: production
+      SERVICE_AUTH_KEY: ${SERVICE_AUTH_KEY}
+      GATEWAY_PORT: 3000
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/kavox?authSource=admin
+      REDIS_URL: redis://redis:6379
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      PRODUCT_SERVICE_URL: http://auth:3001
+      ORDER_SERVICE_URL: http://product:3002
+      PAYMENT_SERVICE_URL: http://order:3003
+      QIKINK_SERVICE_URL: http://payment:3004
+      SEARCH_SERVICE_URL: http://qikink:3005
+      RECOMMENDATION_SERVICE_URL: http://search:3006
+      SELLER_SERVICE_URL: http://recommendation:3007
+      ADMIN_SERVICE_URL: http://seller:3008
+    ports:
+      - "3000:3000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:gateway
+
+  # Auth Service
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-auth
+    environment:
+      NODE_ENV: production
+      SERVICE_NAME: auth-service
+      AUTH_SERVICE_PORT: 3001
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/kavox?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+    ports:
+      - "3001:3001"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:auth
+
+  # Product Service
+  product:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-product
+    environment:
+      NODE_ENV: production
+      SERVICE_NAME: product-service
+      PRODUCT_SERVICE_PORT: 3002
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/kavox?authSource=admin
+      QIKINK_API_URL: ${QIKINK_API_URL}
+      QIKINK_API_KEY: ${QIKINK_API_KEY}
+    ports:
+      - "3002:3002"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:product
+
+  # Order Service
+  order:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-order
+    environment:
+      NODE_ENV: production
+      SERVICE_NAME: order-service
+      ORDER_SERVICE_PORT: 3003
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/kavox?authSource=admin
+      QIKINK_API_URL: ${QIKINK_API_URL}
+      QIKINK_API_KEY: ${QIKINK_API_KEY}
+    ports:
+      - "3003:3003"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:order
+
+  # Payment Service
+  payment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-payment
+    environment:
+      NODE_ENV: production
+      SERVICE_NAME: payment-service
+      PAYMENT_SERVICE_PORT: 3004
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/kavox?authSource=admin
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      ORDER_SERVICE_URL: http://order:3003
+    ports:
+      - "3004:3004"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:payment
+
+  # Qikink Service
+  qikink:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-qikink
+    environment:
+      NODE_ENV: production
+      SERVICE_NAME: qikink-service
+      QIKINK_SERVICE_PORT: 3005
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/kavox?authSource=admin
+      QIKINK_API_URL: ${QIKINK_API_URL}
+      QIKINK_API_KEY: ${QIKINK_API_KEY}
+    ports:
+      - "3005:3005"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:qikink
+
+  # Search Service
+  search:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-search
+    environment:
+      NODE_ENV: production
+      SERVICE_NAME: search-service
+      SEARCH_SERVICE_PORT: 3006
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    ports:
+      - "3006:3006"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:search
+
+  # Recommendation Service
+  recommendation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-recommendation
+    environment:
+      NODE_ENV: production
+      SERVICE_NAME: recommendation-service
+      RECOMMENDATION_SERVICE_PORT: 3007
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/kavox?authSource=admin
+    ports:
+      - "3007:3007"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:recommendation
+
+  # Seller Service
+  seller:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-seller
+    environment:
+      NODE_ENV: production
+      SERVICE_NAME: seller-service
+      SELLER_SERVICE_PORT: 3008
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/kavox?authSource=admin
+      PRODUCT_SERVICE_URL: http://product:3002
+    ports:
+      - "3008:3008"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:seller
+
+  # Admin Service
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kavox-admin
+    environment:
+      NODE_ENV: production
+      SERVICE_NAME: admin-service
+      ADMIN_SERVICE_PORT: 3009
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/kavox?authSource=admin
+      AUTH_SERVICE_URL: http://auth:3001
+      PRODUCT_SERVICE_URL: http://product:3002
+      ORDER_SERVICE_URL: http://order:3003
+      PAYMENT_SERVICE_URL: http://payment:3004
+      SELLER_SERVICE_URL: http://seller:3008
+    ports:
+      - "3009:3009"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kavox-network
+    command: npm run start:admin
+
+networks:
+  kavox-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+  redis_data:
+  elasticsearch_data:

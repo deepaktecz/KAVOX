@@ -1,40 +1,51 @@
+'use client';
+
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import Cookies from 'js-cookie';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+/**
+ * KAVOX API CLIENT
+ * Unified HTTP client for all microservices communication
+ */
 
-// ─── Create Axios Instance ─────────────────────────────────────
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const TOKEN_KEY = 'kavox_auth_token';
+const REFRESH_TOKEN_KEY = 'kavox_refresh_token';
+
+// ─── Create Axios Instance ────────────────────────────────────
 const api: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
-  timeout: 15000,
-  withCredentials: true,
+  baseURL: API_BASE_URL,
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ─── Token management ─────────────────────────────────────────
-let accessToken: string | null = null;
-let isRefreshing = false;
-let pendingRequests: Array<{ resolve: Function; reject: Function }> = [];
-
-export function setAccessToken(token: string | null) {
-  accessToken = token;
-  if (token && typeof window !== 'undefined') {
-    sessionStorage.setItem('kavox_token', token);
-  }
+// ─── Token Management ─────────────────────────────────────────
+export function setTokens(accessToken: string, refreshToken: string) {
+  Cookies.set(TOKEN_KEY, accessToken, { expires: 1 });
+  Cookies.set(REFRESH_TOKEN_KEY, refreshToken, { expires: 7 });
 }
 
 export function getAccessToken(): string | null {
-  if (accessToken) return accessToken;
   if (typeof window !== 'undefined') {
-    return sessionStorage.getItem('kavox_token');
+    return Cookies.get(TOKEN_KEY) || null;
+  }
+  return null;
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window !== 'undefined') {
+    return Cookies.get(REFRESH_TOKEN_KEY) || null;
   }
   return null;
 }
 
 export function clearTokens() {
-  accessToken = null;
-  if (typeof window !== 'undefined') {
-    sessionStorage.removeItem('kavox_token');
-  }
+  Cookies.remove(TOKEN_KEY);
+  Cookies.remove(REFRESH_TOKEN_KEY);
+}
+
+export function isAuthenticated(): boolean {
+  return !!getAccessToken();
 }
 
 // ─── Request Interceptor ──────────────────────────────────────
@@ -150,8 +161,6 @@ export const productApi = {
   addReview: (id: string, data: any) => api.post(`/products/${id}/reviews`, data),
   deleteReview: (productId: string, reviewId: string) => api.delete(`/products/${productId}/reviews/${reviewId}`),
   toggleWishlist: (id: string) => api.post(`/products/${id}/wishlist`),
-  // Seller
-  getMyProducts: (params?: any) => api.get('/products/seller/my-products', { params }),
   reviewProduct: (id: string, data: { action: 'approve' | 'reject'; rejectionReason?: string }) =>
     api.patch(`/products/${id}/review`, data),
 };
@@ -166,8 +175,6 @@ export const orderApi = {
   cancelOrder: (id: string, data: { reason?: string }) => api.post(`/orders/my-orders/${id}/cancel`, data),
   requestReturn: (id: string, data: { reason: string }) => api.post(`/orders/my-orders/${id}/return`, data),
   trackOrder: (params: { orderNumber: string; phone: string }) => api.get('/orders/track', { params }),
-  // Seller
-  getSellerOrders: (params?: any) => api.get('/orders/seller/orders', { params }),
   // Admin
   adminGetOrders: (params?: any) => api.get('/orders/admin/all', { params }),
   adminUpdateStatus: (id: string, data: any) => api.patch(`/orders/admin/${id}/status`, data),
